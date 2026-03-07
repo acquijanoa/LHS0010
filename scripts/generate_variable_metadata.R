@@ -9,7 +9,7 @@ library(jsonlite)
 # Find the SAS setup file for a dataset
 find_sas_setup_file <- function(sas_file_path) {
   data_dir <- dirname(sas_file_path)
-  base_name <- sub("\\.sas7bdat$", "", basename(sas_file_path), ignore.case = TRUE)
+  base_name <- sub("\\.(sas7bdat|sav)$", "", basename(sas_file_path), ignore.case = TRUE)
   candidates <- c(
     file.path(data_dir, paste0(toupper(base_name), ".SAS")),
     file.path(data_dir, paste0(tolower(base_name), ".sas")),
@@ -107,9 +107,16 @@ parse_variable_formats <- function(sas_setup_path) {
 # Function to extract variable metadata and generate JSON
 generate_metadata_json <- function(sas_file_path, output_dir = "docs", sas_setup_path = NULL) {
   
-  # Read the SAS dataset
+  # Read the dataset
   cat("Reading:", sas_file_path, "\n")
-  data <- read_sas(sas_file_path)
+  ext <- tolower(tools::file_ext(sas_file_path))
+  if (ext == "sas7bdat") {
+    data <- read_sas(sas_file_path)
+  } else if (ext == "sav") {
+    data <- read_sav(sas_file_path)
+  } else {
+    stop("Unsupported file type: ", sas_file_path)
+  }
 
   if (is.null(sas_setup_path)) {
     sas_setup_path <- find_sas_setup_file(sas_file_path)
@@ -153,7 +160,19 @@ generate_metadata_json <- function(sas_file_path, output_dir = "docs", sas_setup
         var_metadata$labels <- list()
       }
     } else {
-      var_metadata$labels <- list()
+      value_labels_attr <- attr(data[[var_name]], "labels")
+      if (!is.null(value_labels_attr)) {
+        codes <- as.character(unname(value_labels_attr))
+        labels <- names(value_labels_attr)
+        if (is.null(labels)) {
+          labels <- codes
+        }
+        value_list <- as.list(labels)
+        names(value_list) <- codes
+        var_metadata$labels <- value_list
+      } else {
+        var_metadata$labels <- list()
+      }
     }
     
     # Calculate percentage missing
@@ -183,11 +202,25 @@ generate_metadata_json <- function(sas_file_path, output_dir = "docs", sas_setup
 data_dir <- "data"
 hnir_files <- list.files(
   path = data_dir,
-  pattern = "^[Hh][Nn][Ii][Rr].+\\.sas7bdat$",
+  pattern = "^[Hh][Nn][Ii][Rr].+\\.(sas7bdat|sav)$",
   recursive = TRUE,
   full.names = TRUE,
   ignore.case = TRUE
 )
+
+if (length(hnir_files) > 0) {
+  base_names <- tolower(sub("\\.(sas7bdat|sav)$", "", basename(hnir_files)))
+  selected_indices <- tapply(seq_along(hnir_files), base_names, function(idx) {
+    files <- hnir_files[idx]
+    sav_files <- files[grepl("\\.sav$", files, ignore.case = TRUE)]
+    if (length(sav_files) > 0) {
+      sav_files[1]
+    } else {
+      files[1]
+    }
+  })
+  hnir_files <- unname(unlist(selected_indices))
+}
 
 cat("Found", length(hnir_files), "HNIR* dataset(s):\n")
 print(hnir_files)
