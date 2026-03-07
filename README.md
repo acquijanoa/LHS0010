@@ -2,6 +2,12 @@
 
 This repository contains scripts to derive and document variables from DHS Honduras datasets (HNIR52, HNIR62). Data files are not included in version control. If you place the DHS data files in the expected folders, you can reproduce the derived datasets and documentation outputs using the scripts below.
 
+Project title (Latin America Health Studies internal code LHS0010):
+Geographic Inequities in Adolescent Unmet Need for Modern Contraception in Honduras.
+
+Objective:
+Quantify adolescent ( <19 ) versus adult (24-35) differences in unmet need for modern contraception and assess subnational geographic inequities, using DHS/ENDESA data and spatial smoothing to inform targeted, equity-focused family planning strategies.
+
 ## Scripts
 - `scripts/generate_variable_metadata.R`: Generates JSON variable metadata from HNIR SAS files.
 - `scripts/derive_hnir52.R`: Derives analysis variables for HNIR52.
