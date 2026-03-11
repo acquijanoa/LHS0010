@@ -13,6 +13,7 @@ Quantify adolescent ( <19 ) versus adult (24-35) differences in unmet need for m
 - `scripts/derive_hnir52.R`: Derives analysis variables for HNIR52.
 - `scripts/derive_hnir62.R`: Derives analysis variables for HNIR62.
 - `scripts/derive_hnir72.R`: Derives analysis variables for HNIR72.
+- `scripts/estimate_age_region.R`: Produces design-based age-by-region unmet-need proportions with standard errors and denominators for each survey.
 - `scripts/print_derived_dictionary.R`: Prints a data dictionary for derived variables.
 - `scripts/generate_unmet_need_flowchart.js`: Generates `docs/unmet_need_flowchart.svg`.
 
@@ -31,12 +32,15 @@ Quantify adolescent ( <19 ) versus adult (24-35) differences in unmet need for m
 4) Print the derived-variable dictionary:
    - `Rscript scripts/print_derived_dictionary.R`
 5) Generate the unmet-need flowchart:
-   - `node scripts/generate_unmet_need_flowchart.js`
+    - `node scripts/generate_unmet_need_flowchart.js`
+6) (Optional) Generate age-by-region direct estimates:
+    - `Rscript scripts/estimate_age_region.R output/age_region_estimates.csv`
 
 ## Outputs
 - `docs/hnir52fl_metadata.json`, `docs/hnir62fl_metadata.json`: Variable metadata.
 - `docs/unmet_need_derivation.tex`: Unmet need derivation text and figure.
 - `docs/unmet_need_flowchart.svg`: Flowchart of unmet need derivation.
 - `data/derived/*.rds`: Derived datasets (not tracked in git).
+- `output/age_region_estimates.csv`: Direct age-by-region unmet-need estimates for HNIR52/62/72.
 
 Note: `derive_hnir72.R` aligns its `unmet_need` flag logic with the earlier scripts so 52, 62, and 72 all use the same final 0/1 definition when comparing across years.

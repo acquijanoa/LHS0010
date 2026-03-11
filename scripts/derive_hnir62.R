@@ -6,6 +6,16 @@ output_path <- "data/derived/hnir62fl_derived.rds"
 
 data <- read_sas(input_path)
 
+required_vars <- c(
+  "V005", "V015", "V021", "V022", "V024", "V025", "V012", "V106",
+  "V190", "V201", "V213", "V215", "V225", "V313", "V376", "V3A08D",
+  "V501", "V525", "V527", "V528", "V602", "V603", "V714"
+)
+missing_vars <- setdiff(required_vars, names(data))
+if (length(missing_vars) > 0) {
+  stop(paste("Missing required variables:", paste(missing_vars, collapse = ", ")))
+}
+
 region_map <- c(
   "1" = "ATLANTIDA",
   "2" = "COLON",
@@ -27,15 +37,12 @@ region_map <- c(
   "18" = "YORO"
 )
 
-if (!"V213" %in% names(data)) {
-  stop("V213 not found in dataset.")
-}
-
 hnir62_derived <- data %>%
   mutate(
     strat = V022,
     psu_id = V021,
     weight = V005 / 1e6,
+    interviewed = if_else(V015 == 1, 1L, if_else(V015 %in% 2:7, 0L, NA_integer_)),
     pregnant = if_else(
       V213 == 1,
       1L,
@@ -46,7 +53,11 @@ hnir62_derived <- data %>%
       0L,
       if_else(
         !is.na(V528),
-        if_else(V528 == 95, 1L, if_else(V528 == 31, 0L, NA_integer_)),
+        if_else(
+          V528 == 95 | (V528 >= 0 & V528 <= 30),
+          1L,
+          if_else(V528 == 31, 0L, NA_integer_)
+        ),
         if_else(
           !is.na(V527),
           if_else(
@@ -116,9 +127,12 @@ hnir62_derived <- data %>%
       if_else(V313 %in% c(0, 1, 2), 0L, NA_integer_)
     ),
     unfecund = if_else(
-      V215 %in% c(994, 996) | V376 == 23 | V3A08D == 1 | V602 == 6,
+      coalesce(V215 %in% c(994, 996), FALSE) |
+        coalesce(V376 == 23, FALSE) |
+        coalesce(V3A08D == 1, FALSE) |
+        coalesce(V602 == 6, FALSE),
       1L,
-      if_else(V215 %in% c(100:499, 995), 0L, NA_integer_)
+      if_else(coalesce(V215 %in% c(100:499, 995), FALSE), 0L, NA_integer_)
     ),
     unmet_need_c3 = if_else(
       coalesce(unfecund, 0L) == 1L,
@@ -156,8 +170,14 @@ hnir62_derived <- data %>%
           NA_integer_
         )
       )
+    ),
+    unmet_need = if_else(
+      is.na(unmet_need_c3),
+      NA_integer_,
+      if_else(unmet_need_c3 %in% c(1, 2), 1L, 0L)
     )
-  )
+  ) %>%
+  filter(interviewed == 1L)
 
 dir.create(dirname(output_path), showWarnings = FALSE, recursive = TRUE)
 saveRDS(hnir62_derived, output_path)

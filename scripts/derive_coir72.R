@@ -1,41 +1,64 @@
 library(haven)
 library(dplyr)
 
-input_path <- "data/HNIR52SD/hnir52fl.sas7bdat"
-output_path <- "data/derived/hnir52fl_derived.rds"
+input_path <- "data/COIR72SD/COIR72FL.SAS7BDAT"
+output_path <- "data/derived/coir72fl_derived.rds"
 
 data <- read_sas(input_path)
 
-region_map <- c(
-  "1" = "ATLANTIDA",
-  "2" = "COLON",
-  "3" = "COMAYAGUA",
-  "4" = "COPAN",
-  "5" = "CORTES",
-  "6" = "CHOLUTECA",
-  "7" = "EL PARAISO",
-  "8" = "FRANCISCO MORAZAN",
-  "9" = "GRACIAS A DIOS",
-  "10" = "INTIBUCA",
-  "11" = "ISLAS DE LA BAHIA",
-  "12" = "LA PAZ",
-  "13" = "LEMPIRA",
-  "14" = "OCOTEPEQUE",
-  "15" = "OLANCHO",
-  "16" = "SANTA BARBARA",
-  "17" = "VALLE",
-  "18" = "YORO"
+required_vars <- c(
+  "V005", "V015", "V021", "V022", "V025", "V012", "V106",
+  "V190", "V201", "V213", "V215", "V225", "V313", "V376", "V3A08D",
+  "V501", "V525", "V527", "V528", "V602", "V603", "V714", "SDEPTO"
 )
 
-if (!"V213" %in% names(data)) {
-  stop("V213 not found in dataset.")
+missing_vars <- setdiff(required_vars, names(data))
+if (length(missing_vars) > 0) {
+  stop(paste("Missing required variables:", paste(missing_vars, collapse = ", ")))
 }
 
-hnir52_derived <- data %>%
+region_map <- c(
+  "5" = "Antioquia",
+  "8" = "Atlantico",
+  "11" = "Bogota",
+  "13" = "Bolivar",
+  "15" = "Boyaca",
+  "17" = "Caldas",
+  "18" = "Caqueta",
+  "19" = "Cauca",
+  "20" = "Cesar",
+  "23" = "Cordoba",
+  "25" = "Cundinamarca",
+  "27" = "Choco",
+  "41" = "Huila",
+  "44" = "La Guajira",
+  "47" = "Magdalena",
+  "50" = "Meta",
+  "52" = "Narimo",
+  "54" = "Norte de Santander",
+  "63" = "Quindio",
+  "66" = "Risaralda",
+  "68" = "Santander",
+  "70" = "Sucre",
+  "73" = "Tolima",
+  "76" = "Valle",
+  "81" = "Arauca",
+  "85" = "Casanare",
+  "86" = "Putumayo",
+  "88" = "San Andres y Providencia",
+  "91" = "Amazonas",
+  "94" = "Guainia",
+  "95" = "Guaviare",
+  "97" = "Vaupes",
+  "99" = "Vichada"
+)
+
+coir72_derived <- data %>%
   mutate(
     strat = V022,
     psu_id = V021,
     weight = V005 / 1e6,
+    interviewed = if_else(V015 == 1, 1L, if_else(V015 %in% 2:7, 0L, NA_integer_)),
     pregnant = if_else(
       V213 == 1,
       1L,
@@ -80,7 +103,8 @@ hnir52_derived <- data %>%
       1L,
       if_else(V025 == 2, 0L, NA_integer_)
     ),
-    region = unname(region_map[as.character(V024)]),
+    region = unname(region_map[as.character(SDEPTO)]),
+    region_code = SDEPTO,
     windex_c3 = if_else(
       V190 %in% c(1, 2),
       1L,
@@ -116,7 +140,7 @@ hnir52_derived <- data %>%
       if_else(V313 %in% c(0, 1, 2), 0L, NA_integer_)
     ),
     unfecund = if_else(
-      V215 %in% c(994, 996) | V376 == 23 | V3A08D == 1 | V602 == 6,
+      V215 %in% c(993, 994, 996) | V376 == 23 | V3A08D == 1 | V602 == 6,
       1L,
       if_else(V215 %in% c(100:499, 995), 0L, NA_integer_)
     ),
@@ -140,14 +164,17 @@ hnir52_derived <- data %>%
                 if_else(
                   V602 == 1,
                   if_else(
-                    V603 == 994 | (V603 >= 100 & V603 <= 199 & (V603 - 100) < 24) | (V603 >= 200 & V603 <= 299 & (V603 - 200) < 2),
+                    V603 == 994 |
+                      (V603 >= 100 & V603 <= 199 & (V603 - 100) < 24) |
+                      (V603 >= 200 & V603 <= 299 & (V603 - 200) < 2),
                     0L,
-                  if_else(
-                    (V603 >= 100 & V603 <= 199 & (V603 - 100) >= 24) | (V603 >= 200 & V603 <= 299 & (V603 - 200) >= 2),
-                    1L,
-                    if_else(V603 %in% c(199, 299, 993, 996, 997, 998), 1L, NA_integer_)
-                  )
-                ),
+                    if_else(
+                      (V603 >= 100 & V603 <= 199 & (V603 - 100) >= 24) |
+                        (V603 >= 200 & V603 <= 299 & (V603 - 200) >= 2),
+                      1L,
+                      if_else(V603 %in% c(199, 299, 993, 996, 997, 998), 1L, NA_integer_)
+                    )
+                  ),
                   NA_integer_
                 )
               )
@@ -156,9 +183,15 @@ hnir52_derived <- data %>%
           NA_integer_
         )
       )
+    ),
+    unmet_need = if_else(
+      is.na(unmet_need_c3),
+      NA_integer_,
+      if_else(unmet_need_c3 %in% c(1, 2), 1L, 0L)
     )
-  )
+  ) %>%
+  filter(interviewed == 1L)
 
 dir.create(dirname(output_path), showWarnings = FALSE, recursive = TRUE)
-saveRDS(hnir52_derived, output_path)
+saveRDS(coir72_derived, output_path)
 cat("Saved derived dataset to:", output_path, "\n")

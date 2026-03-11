@@ -13,13 +13,18 @@ library(ggpattern)
 cmdstan_version()
 
 ## read shapefile
-honduras19 <- st_read("../data/shp/Shp_mgd.shp") %>% 
+honduras19 <- st_read("data/shp/Shp_mgd.shp") %>% 
                   filter(CNTRYNAMEE =="Honduras") %>% 
                   mutate(DHSREGEN = ifelse(DHSREGEN == "Resto Francisco Morazan","FRANCISCO MORAZAN",DHSREGEN)) %>%
                   mutate(DHSREGEN = ifelse(DHSREGEN == "Resto Cortes","CORTES",DHSREGEN))%>% 
                   mutate(DHSREGEN=factor(toupper(DHSREGEN))) %>%
                   rename(REGION_NAME=DHSREGEN)
 unique(honduras19$REGION_NAME)
+
+honduras12 <- honduras19 %>% mutate(dept_fixed = case_when(REGION_NAME == "SAN PEDRO SULA" ~ "CORTES",
+                                                            REGION_NAME == "DISTRITO CENTRAL" ~ "FRANCISCO MORAZAN",
+                                                            TRUE ~ as.character(REGION_NAME)))  %>% group_by(dept_fixed) %>%
+  summarize() %>% ungroup() %>% rename(REGION_NAME=dept_fixed) %>% st_as_sf()                          
 
 ## 
 dept_labels <- c("ATLANTIDA", "COLON", "COMAYAGUA", "COPAN", 
@@ -29,7 +34,9 @@ dept_labels <- c("ATLANTIDA", "COLON", "COMAYAGUA", "COPAN",
                  "OCOTEPEQUE", "OLANCHO", "SANTA BARBARA", 
                  "VALLE", "YORO", "SAN PEDRO SULA", "DISTRITO CENTRAL")
 
-## load log odds estimated on sas
+## load direct age-region estimates (adults as reference)
+log_odds %>% head()
+
 log.odds<- read_sas('../data/derived/hestimates_19.sas7bdat') %>% 
             select(REGION,AGEGROUP_C4,Estimate,StdErr) %>% 
             mutate(REGION_NAME = factor(REGION, levels = 1:20, labels = dept_labels)) %>% 
