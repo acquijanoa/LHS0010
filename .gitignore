@@ -1,3 +1,12 @@
-/data
+/data/*
+!/data/README.md
+!/data/raw/
+!/data/raw/.gitkeep
+!/data/derived/
+!/data/derived/.gitkeep
 /submissions
 .DS_Store
+
+# Output temp files (e.g. editor locks)
+output/~$*
+output/*.tmp

@@ -1,0 +1,3 @@
+{"sessionId":"f42459","runId":"run1","message":"mean_by_age after svyby","timestamp":NA,"is_null":FALSE,"col_names":"age_grp,statistic","nrow":2,"hypothesisId":"A"}
+{"sessionId":"f42459","runId":"run1","message":"mrow per grp","timestamp":NA,"grp":"adolescent","grp_code":1,"nrow_mrow":1,"has_value_col":FALSE,"length_mrow_value":NA,"hypothesisId":"B"}
+{"sessionId":"f42459","runId":"run1","message":"before format_mean","timestamp":NA,"grp":"adolescent","length_mn":0,"mn_is_na":FALSE,"fmt_len":0,"hypothesisId":"C"}
