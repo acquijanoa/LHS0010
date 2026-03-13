@@ -2,6 +2,9 @@
 !/data/README.md
 !/data/raw/
 !/data/raw/.gitkeep
+# SAS transport files exceed GitHub 100 MB limit — keep local only
+data/raw/**/*.sas7bdat
+data/raw/**/*.SAS7BDAT
 !/data/derived/
 !/data/derived/.gitkeep
 /submissions
