@@ -14,6 +14,21 @@
 #
 #   Rscript scripts/03_analysis/honduras_shared_bym2_plot_maps.R
 
+# Personal lib + sf (same pattern as BYM2 sbatch jobs on Longleaf)
+user_lib <- file.path(
+  Sys.getenv("HOME"), "R",
+  paste0(R.version$platform, "-library"),
+  paste0(R.version$major, ".", strsplit(R.version$minor, ".", fixed = TRUE)[[1L]][1L])
+)
+dir.create(user_lib, recursive = TRUE, showWarnings = FALSE)
+.libPaths(c(user_lib, .libPaths()))
+if (!requireNamespace("Rcpp", quietly = TRUE) || packageVersion("Rcpp") < "1.1.0") {
+  install.packages("Rcpp", lib = user_lib, repos = "https://cloud.r-project.org")
+}
+if (!requireNamespace("sf", quietly = TRUE)) {
+  install.packages("sf", lib = user_lib, repos = "https://cloud.r-project.org")
+}
+
 suppressPackageStartupMessages({
   library(dplyr)
   library(tidyr)
@@ -36,6 +51,7 @@ shp_path <- "data/shp/Shp_mgd.shp"
 summary_both <- "output/spatial_honduras/shared_bym2_fh_both_waves_region_summary.csv"
 summary_2011 <- "output/spatial_honduras/shared_bym2_fh_2011_12_region_summary.csv"
 summary_2019 <- "output/spatial_honduras/shared_bym2_fh_2019_region_summary.csv"
+summary_st <- "output/spatial_honduras/shared_bym2_fh_st_prevalence_by_region_time.csv"
 plot_dir <- "output/spatial_honduras/plots"
 dir.create(plot_dir, recursive = TRUE, showWarnings = FALSE)
 
@@ -48,10 +64,17 @@ if (file.exists(summary_both)) {
     read_csv(summary_2011, show_col_types = FALSE) %>% mutate(survey = "2011-12"),
     read_csv(summary_2019, show_col_types = FALSE) %>% mutate(survey = "2019")
   )
+} else if (file.exists(summary_st)) {
+  tab <- read_csv(summary_st, show_col_types = FALSE) %>%
+    mutate(outcome = ifelse(outcome == "Young_adult", "Young adult", outcome)) %>%
+    select(region, survey, outcome, p_median) %>%
+    pivot_wider(names_from = outcome, values_from = p_median) %>%
+    rename(p1_median = Adolescent, p2_median = `Young adult`)
 } else {
   stop(
-    "Need shared_bym2_fh_both_waves_region_summary.csv or both per-wave CSVs.\n",
-    "Run: Rscript scripts/03_analysis/honduras_shared_bym2_fay_herriot.R"
+    "Need one of:\n",
+    "  • ", summary_both, " or both per-wave CSVs (non-ST fit), or\n",
+    "  • ", summary_st, " (after honduras_shared_bym2_fay_herriot_st.R)\n"
   )
 }
 

@@ -1,3 +1,0 @@
-Error in library(sf) : there is no package called ‘sf’
-Calls: suppressPackageStartupMessages -> withCallingHandlers -> library
-Execution halted

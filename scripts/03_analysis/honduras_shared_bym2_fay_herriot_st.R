@@ -12,6 +12,47 @@ if (length(script_path) == 1) {
   setwd(dirname(dirname(script_dir)))
 }
 
+# -----------------------------------------------------------------------------
+# Packages required by this script and everything it sources (install before library):
+#
+#   honduras_shared_bym2_fay_herriot_st.R
+#     sf, spdep, readr, dplyr, tidyr
+#   shared_bym2_fay_herriot_fit.R
+#     Matrix, cmdstanr; spdep::nb2mat; posterior:: (summarize_shared_bym2)
+#   shared_bym2_fay_herriot_st_fit.R
+#     cmdstanr, dplyr
+#
+# CRAN (personal lib): Rcpp (>=1.1 for units), units, sf, spdep, readr, dplyr, tidyr,
+#   Matrix, posterior  (+ transitive: sp, spData, boot, deldir, LearnBayes, vroom, …)
+# Not on CRAN: cmdstanr → install.packages(..., repos = c(mc-stan.org/r-packages, CRAN))
+# Outside R: CmdStan C++ — cmdstanr::install_cmdstan() once; PATH for g++/make on HPC
+# -----------------------------------------------------------------------------
+user_lib <- Sys.getenv("R_LIBS_USER", unset = "")
+if (!nzchar(user_lib)) {
+  user_lib <- file.path(
+    Sys.getenv("HOME"), "R",
+    paste0(R.version$platform, "-library"),
+    paste0(R.version$major, ".", strsplit(R.version$minor, ".", fixed = TRUE)[[1L]][1L])
+  )
+}
+dir.create(user_lib, recursive = TRUE, showWarnings = FALSE)
+.libPaths(c(user_lib, .libPaths()))
+cran <- "https://cloud.r-project.org"
+if (!requireNamespace("Rcpp", quietly = TRUE) || packageVersion("Rcpp") < "1.1.0") {
+  install.packages("Rcpp", lib = user_lib, repos = cran)
+}
+cran_pkgs <- c(
+  "units", "sf", "spdep", "readr", "dplyr", "tidyr", "Matrix", "posterior"
+)
+miss <- cran_pkgs[!vapply(cran_pkgs, requireNamespace, logical(1), quietly = TRUE)]
+if (length(miss)) {
+  install.packages(miss, lib = user_lib, repos = cran)
+}
+if (!requireNamespace("cmdstanr", quietly = TRUE)) {
+  install.packages("cmdstanr", lib = user_lib,
+    repos = c("https://mc-stan.org/r-packages/", cran))
+}
+
 suppressPackageStartupMessages({
   library(sf)
   library(spdep)
