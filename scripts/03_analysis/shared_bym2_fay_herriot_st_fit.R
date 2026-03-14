@@ -1,6 +1,12 @@
 # Spatio-temporal shared BYM2 Fay–Herriot: Stan data list, cmdstanr fit, summaries.
 # Source after shared_bym2_fay_herriot_fit.R (scale_icar_from_nb, nb_to_stan_edges, as_stan_V).
 
+user_lib <- "/nas/longleaf/home/aquijano/R/x86_64-pc-linux-gnu-library/4.5"
+.libPaths(c(user_lib, .libPaths()))
+
+# install sf package
+install.packages("sf", lib = user_lib, repos = "https://cloud.r-project.org")
+
 suppressPackageStartupMessages({
   library(cmdstanr)
   library(dplyr)
