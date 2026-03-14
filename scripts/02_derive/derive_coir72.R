@@ -140,7 +140,6 @@ coir72_derived <- data %>%
       )
     ),
     Adolescent = as.integer(agegroup_c4 == 1L),
-    Young_Adult = as.integer(agegroup_c4 %in% c(2L, 3L)),
     employed = if_else(
       V714 == 1,
       1L,

@@ -10,8 +10,10 @@ Raw DHS recode files go under **`raw/`**; derived outputs go in **`derived/`**.
 
 | Path | Description |
 |------|-------------|
+| `raw/HNIR52SD/hnir52fl.sas7bdat` | Honduras DHS IR 52 (2005–06) |
 | `raw/HNIR62SD/hnir62fl.sas7bdat` | Honduras DHS IR 62 recode (raw) |
 | `raw/HNIR72SD/hnir72fl.sav` (or `.sas7bdat`) | Honduras **MICS 2019** women; see `raw/HNIR72SD/README.md` |
+| `raw/COIR53SD/COIR53FL.SAS7BDAT` | Colombia DHS IR 53 (2005) recode (raw) |
 | `raw/COIR61SD/COIR61FL.SAS7BDAT` | Colombia DHS IR 61 recode (raw) |
 | `raw/COIR72SD/COIR72FL.SAS7BDAT` | Colombia DHS IR 72 recode (raw) |
 | `derived/*.rds` | Derived datasets from `scripts/02_derive/` |

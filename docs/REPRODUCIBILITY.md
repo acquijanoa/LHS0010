@@ -10,8 +10,10 @@ Register at **[DHS](https://dhsprogram.com/Data/)** for **HNIR62** (2011–12 IR
 
 | Country   | Survey (source)        | Place file here      | Expected filename (case may vary) |
 |-----------|------------------------|----------------------|-----------------------------------|
+| Honduras  | DHS 2005–06 (IR)       | `data/raw/HNIR52SD/` | `hnir52fl.sas7bdat`               |
 | Honduras  | DHS 2011–12 (IR)       | `data/raw/HNIR62SD/` | `hnir62fl.sas7bdat`               |
 | Honduras  | **UNICEF MICS 2019** (Women) | `data/raw/HNIR72SD/` | **`hnir72fl.sav`** (rename **`wm.sav`**) or **`hnir72fl.sas7bdat`** |
+| Colombia  | DHS 2005 (IR)                 | `data/raw/COIR53SD/`      | `COIR53FL.SAS7BDAT`               |
 | Colombia  | DHS 2010                      | `data/raw/COIR61SD/`      | `COIR61FL.SAS7BDAT`               |
 | Colombia  | DHS 2015                      | `data/raw/COIR72SD/`      | `COIR72FL.SAS7BDAT`               |
 
@@ -39,12 +41,7 @@ That layer is **not** redistributed with this repo (licensing / size). To reprod
 
 If the shapefile is missing, everything **except** the spatial Stan pipeline and maps still runs via `Rscript scripts/run_all.R` (core tables and reports).
 
-**Optional:** run without SES covariates in Stan (base ICAR model only):
-
-```bash
-export LHS_NO_COV=1
-Rscript scripts/03_analysis/honduras_spatial_smooth_stan.R
-```
+**Optional:** Stan covariate extension — supply a regional covariate CSV as `data/derived/regional_socioeconomic_adol.csv` (your own columns) and `export LHS_USE_COV=1` before `honduras_spatial_smooth_stan.R` (advanced).
 
 ---
 
@@ -82,10 +79,9 @@ This runs, in order:
 
 1. Metadata JSON (optional for analysis; useful for documentation)
 2. All four IR derivations → `data/derived/*.rds`
-3. Regional SES table → `data/derived/regional_socioeconomic_adol.csv` (needed for covariate spatial model)
-4. HNIR design-based region×age×wave (logit) → `output/tables/honduras_region_age_logit_prevalence.csv` (+ vcov)
-5. Covariate RTF reports → `output/reports/`
-6. Derived-variable dictionary (console)
+3. HNIR design-based region×wave (adolescent prevalence + SE, logit + SE) → `output/tables/honduras_region_adolescent_logit_prevalence.csv`
+4. Covariate RTF reports → `output/reports/`
+5. Derived-variable dictionary (console)
 
 **Optional – full spatial pipeline** (needs shapefile + CmdStan; can be slow):
 
@@ -94,7 +90,7 @@ export LHS_RUN_SPATIAL=1
 Rscript scripts/run_all.R
 ```
 
-That additionally runs Honduras Stan fits, maps, and posterior year-difference outputs under `output/spatial_honduras/`.
+That additionally runs Honduras Stan fits and maps under `output/spatial_honduras/`.
 
 ---
 

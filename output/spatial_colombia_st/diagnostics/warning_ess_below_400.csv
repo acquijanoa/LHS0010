@@ -1,0 +1,2 @@
+variable,mean,median,sd,mad,q5,q95,rhat,ess_bulk,ess_tail
+beta[1],0,0,0,0,0,0,NA,NA,NA

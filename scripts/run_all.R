@@ -35,29 +35,27 @@ run_maybe("scripts/01_metadata/generate_coir61fl_metadata.R", "Metadata COIR61")
 run_maybe("scripts/01_metadata/generate_coir72fl_metadata.R", "Metadata COIR72")
 
 # 1) Derive datasets
+run("scripts/02_derive/derive_hnir52.R", "HNIR52 2005-06 derived")
 run("scripts/02_derive/derive_hnir62.R", "HNIR62 derived")
 run("scripts/02_derive/derive_hnir72fl.R", "HNIR72FL MICS derived")
+run_maybe("scripts/02_derive/derive_coir53.R", "COIR53 derived")
 run("scripts/02_derive/derive_coir61.R", "COIR61 derived")
 run("scripts/02_derive/derive_coir72.R", "COIR72 derived")
 
-# 2) Regional SES (for spatial cov model + documentation)
-run("scripts/02_derive/derive_regional_socioeconomic.R", "Regional SES (adolescents)")
-
-# 3) Design-based region × age × wave (HNIR) + logit VCOV (spatial + inference)
+# 2) Design-based region × wave (HNIR adolescents) + logit SE
 dir.create("output/tables", showWarnings = FALSE, recursive = TRUE)
-run("scripts/03_analysis/honduras_region_age_prevalence_logit.R", "HNIR Adol/YA logit + vcov")
+run("scripts/03_analysis/honduras_region_adolescent_logit_prevalence.R", "HNIR adolescent logit + SE")
 
-# 4) Reports
+# 3) Reports
 run("scripts/04_reporting/create_covariate_report_table.R", "Covariate report tables")
 run("scripts/04_reporting/print_derived_dictionary.R", "Derived dictionary (console)")
 
-# 5) Optional spatial (Honduras): shapefile + CmdStan
+# 4) Optional spatial (Honduras): shapefile + CmdStan
 spatial <- Sys.getenv("LHS_RUN_SPATIAL", "") %in% c("1", "TRUE", "true")
 shp_ok <- file.exists("data/shp/Shp_mgd.shp")
 if (spatial && shp_ok) {
   run("scripts/03_analysis/honduras_spatial_smooth_stan.R", "Honduras Stan spatial smooth")
   run("scripts/03_analysis/honduras_spatial_plot_maps.R", "Honduras spatial maps")
-  run("scripts/03_analysis/honduras_posterior_year_diff.R", "Honduras posterior year diff")
 } else if (spatial && !shp_ok) {
   message("LHS_RUN_SPATIAL set but data/shp/Shp_mgd.shp missing — skip spatial (see docs/REPRODUCIBILITY.md)")
 }

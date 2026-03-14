@@ -129,7 +129,6 @@ hnir72fl_derived <- data %>%
       WB4 < 20 ~ 1L, WB4 >= 20 & WB4 <= 24 ~ 2L, WB4 >= 25 & WB4 <= 34 ~ 3L, WB4 >= 35 ~ 4L, TRUE ~ NA_integer_
     ),
     Adolescent = as.integer(agegroup_c4 == 1L),
-    Young_Adult = as.integer(agegroup_c4 %in% c(2L, 3L)),
     education_c4 = case_when(
       WB5 %in% c(2, 9) | WB6A %in% c(0, 1) ~ 0L,
       WB6A %in% c(3, 4) | (WB6A == 2 & WB6B > 6) ~ 2L,

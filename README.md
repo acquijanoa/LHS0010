@@ -6,7 +6,7 @@ This repository contains scripts to derive and document variables from DHS Hondu
 
 **Project (Latin America Health Studies, LHS0010):** Geographic inequities in adolescent unmet need for modern contraception in Honduras.
 
-**Objective:** Quantify adolescent (<19) versus adult (24–35) differences in unmet need for modern contraception and assess subnational geographic inequities using DHS/ENDESA data and spatial smoothing.
+**Objective:** Adolescent unmet need for modern contraception and subnational geographic inequities (DHS/MICS + spatial smoothing).
 
 ---
 
@@ -36,6 +36,7 @@ Create and populate `data/` as follows (all paths relative to project root). See
 
 | Path | Description |
 |------|-------------|
+| `data/raw/HNIR52SD/hnir52fl.sas7bdat` | Honduras DHS IR 52 (2005–06) |
 | `data/raw/HNIR62SD/hnir62fl.sas7bdat` | Honduras DHS IR 62 recode |
 | `data/raw/HNIR72SD/hnir72fl.sav` (or `hnir72fl.sas7bdat`) | Honduras **MICS 2019** women (`wm.sav` → `hnir72fl.sav`; not DHS) |
 | `data/raw/COIR61SD/COIR61FL.SAS7BDAT` | Colombia DHS IR 61 recode |
@@ -53,14 +54,14 @@ Optional: SAS setup files (e.g. `HNIR62FL.SAS`) in the same folder as the `.sas7
 | **01_metadata** | `generate_variable_metadata.R` | Build JSON variable metadata for HNIR* SAS files in `data/raw/`. |
 | **01_metadata** | `generate_coir61fl_metadata.R` | Build JSON variable metadata for COIR61FL. |
 | **01_metadata** | `generate_coir72fl_metadata.R` | Build JSON variable metadata for COIR72FL. |
+| **02_derive** | `derive_hnir52.R` | HNIR52 2005–06 → `data/derived/hnir52fl_derived.rds`. |
 | **02_derive** | `derive_hnir62.R` | Derive analysis variables for HNIR62 → `data/derived/hnir62fl_derived.rds`. |
 | **02_derive** | `derive_hnir72fl.R` | MICS 2019 women → `data/derived/hnir72fl_derived.rds`. |
 | **02_derive** | `derive_coir61.R` | Derive analysis variables for COIR61 → `data/derived/coir61fl_derived.rds`. |
 | **02_derive** | `derive_coir72.R` | Derive analysis variables for COIR72 → `data/derived/coir72fl_derived.rds`. |
-| **02_derive** | `derive_regional_socioeconomic.R` | Adolescent regional SES proportions → `data/derived/regional_socioeconomic_adol.csv`. |
-| **03_analysis** | `honduras_region_age_prevalence_logit.R` | Design-based unmet need by region × age × wave (HNIR); logit prevalence + full VCOV → spatial inputs. |
+| **03_analysis** | `honduras_region_adolescent_logit_prevalence.R` | Design-based **adolescent** unmet need by region × wave; prevalence + SE, logit + SE → spatial inputs. |
 | **03_analysis** | `smooth_OR.R` | Spatial smoothing (ICAR, etc.). |
-| **03_analysis** | `honduras_spatial_smooth_stan.R` | Honduras BYM2 + **regional SES covariates** when `regional_socioeconomic_adol.csv` exists (`icar_logit_prevalence_cov.stan`). |
+| **03_analysis** | `honduras_spatial_smooth_stan.R` | Honduras BYM2 spatial smooth (`icar_logit_prevalence.stan`; optional cov model via `LHS_USE_COV=1`). |
 | **03_analysis** | `honduras_spatial_plot_maps.R` | Maps from saved layers only (no Stan); fill scale = min–max smoothed *p*. |
 | **04_reporting** | `create_covariate_report_table.R` | Baseline characteristics tables (RTF) → `output/reports/`. |
 | **04_reporting** | `print_derived_dictionary.R` | Print derived-variable dictionary to console. |
@@ -79,7 +80,7 @@ All scripts assume they are run from the **project root** (paths like `data/deri
 Rscript scripts/run_all.R
 ```
 
-Order: **metadata** (JSON) → **derive** (four surveys) → **regional SES** → **HNIR region×age logit estimates** → **covariate RTF reports** → dictionary. Optional spatial (Honduras Stan + maps): place `data/shp/Shp_mgd.shp` (see REPRODUCIBILITY) and run:
+Order: **metadata** (JSON) → **derive** → **HNIR adolescent logit** → **covariate RTF reports** → dictionary. Optional spatial: place `data/shp/Shp_mgd.shp` and run:
 
 ```bash
 LHS_RUN_SPATIAL=1 Rscript scripts/run_all.R
@@ -92,15 +93,15 @@ LHS_RUN_SPATIAL=1 Rscript scripts/run_all.R
    - `Rscript scripts/01_metadata/generate_coir61fl_metadata.R`
    - `Rscript scripts/01_metadata/generate_coir72fl_metadata.R`
 2. Generate derived datasets:
+   - `Rscript scripts/02_derive/derive_hnir52.R`
    - `Rscript scripts/02_derive/derive_hnir62.R`
    - `Rscript scripts/02_derive/derive_hnir72fl.R`
    - `Rscript scripts/02_derive/derive_coir61.R`
    - `Rscript scripts/02_derive/derive_coir72.R`
-3. Regional SES (for spatial covariate model): `Rscript scripts/02_derive/derive_regional_socioeconomic.R`
-4. HNIR region × age × wave (logit + VCOV): `Rscript scripts/03_analysis/honduras_region_age_prevalence_logit.R` → `output/tables/honduras_region_age_logit_prevalence.csv` (and vcov RDS/CSV).
-5. Covariate report tables:
+3. HNIR region × wave (adolescent SEs): `Rscript scripts/03_analysis/honduras_region_adolescent_logit_prevalence.R` → `output/tables/honduras_region_adolescent_logit_prevalence.csv`.
+4. Covariate report tables:
    - `Rscript scripts/04_reporting/create_covariate_report_table.R`
-6. Print derived dictionary:
+5. Print derived dictionary:
    - `Rscript scripts/04_reporting/print_derived_dictionary.R`
 
 ---
@@ -111,9 +112,8 @@ LHS_RUN_SPATIAL=1 Rscript scripts/run_all.R
 |--------|-------------|
 | `docs/*_metadata.json` | `01_metadata` scripts |
 | `data/derived/*.rds` | `02_derive` scripts |
-| `output/tables/honduras_region_age_logit_prevalence.csv` (+ vcov files) | `honduras_region_age_prevalence_logit.R` |
-| `data/derived/regional_socioeconomic_adol.csv` | `derive_regional_socioeconomic.R` |
+| `output/tables/honduras_region_adolescent_logit_prevalence.csv` | `honduras_region_adolescent_logit_prevalence.R` |
 | `output/reports/*_characteristics.rtf` | `create_covariate_report_table.R` |
-| `output/spatial_honduras/*` | `honduras_spatial_smooth_stan.R` (+ plots / year-diff scripts) |
+| `output/spatial_honduras/*` | `honduras_spatial_smooth_stan.R` (+ plot script) |
 
 See `output/README.md`, `docs/README.md`, and **`docs/REPRODUCIBILITY.md`**.

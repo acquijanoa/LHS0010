@@ -32,7 +32,6 @@ row_spec <- list(
     "urban",
     "windex_c3",
     "pregnant",
-    "sexually_active",
     "using_modern_contraceptive",
     "employed"
   ),
@@ -47,15 +46,17 @@ row_spec <- list(
 # i.e., they are among non-missing values of each variable.
 include_missing_level <- FALSE
 
-# Age groups to compare (derived agegroup_c4 coding)
-age_codes <- c(adolescent = 1L, young_adult = 2L)
-age_labels <- c(adolescent = "Adolescent", young_adult = "Young Adults")
+# Adolescents only (agegroup_c4 == 1)
+age_codes <- c(adolescent = 1L)
+age_labels <- c(adolescent = "Adolescent")
 
 # Survey file stem -> (country_code, country_name, year_label) for grouping and spanning headers
 # File stem is basename without _derived.rds (e.g. coir61fl, coir72fl, hnir62fl, hnir72fl)
 survey_config <- list(
+  coir53fl = list(country_code = "COIR", country_name = "Colombia", year_label = "2005"),
   coir61fl = list(country_code = "COIR", country_name = "Colombia", year_label = "2010"),
   coir72fl = list(country_code = "COIR", country_name = "Colombia", year_label = "2015"),
+  hnir52fl = list(country_code = "HNIR", country_name = "Honduras", year_label = "2005-06"),
   hnir62fl = list(country_code = "HNIR", country_name = "Honduras", year_label = "2011-12"),
   hnir72fl = list(country_code = "HNIR", country_name = "Honduras", year_label = "2019")
 )
@@ -67,7 +68,6 @@ var_labels <- c(
   urban = "Urban Residence",
   windex_c3 = "Wealth Index (3-level)",
   pregnant = "Currently Pregnant",
-  sexually_active = "Sexually Active",
   using_modern_contraceptive = "Using Modern Contraceptive",
   employed = "Currently Working",
   parity = "Parity"
@@ -80,7 +80,6 @@ value_labels <- list(
   urban = c(`0` = "Rural", `1` = "Urban"),
   windex_c3 = c(`1` = "Low", `2` = "Middle", `3` = "High"),
   pregnant = c(`0` = "No", `1` = "Yes"),
-  sexually_active = c(`0` = "No", `1` = "Yes"),
   using_modern_contraceptive = c(`0` = "No", `1` = "Yes"),
   unfecund = c(`0` = "No", `1` = "Yes"),
   employed = c(`0` = "No", `1` = "Yes")
@@ -203,9 +202,7 @@ summarize_categorical <- function(df, var, design_vars = c("psu_id", "strat", "w
       characteristic_group = var_labels[[var]] %||% var,
       characteristic = lv_name,
       n_adolescent = as.character(grp_stats$adolescent$n[[lv_key]] %||% 0L),
-      stat_adolescent = format_pct(grp_stats$adolescent$pct[[lv_key]]),
-      n_young_adult = as.character(grp_stats$young_adult$n[[lv_key]] %||% 0L),
-      stat_young_adult = format_pct(grp_stats$young_adult$pct[[lv_key]])
+      stat_adolescent = format_pct(grp_stats$adolescent$pct[[lv_key]])
     )
 
     rows[[length(rows) + 1]] <- row
@@ -231,34 +228,20 @@ summarize_continuous <- function(df, var, design_vars = c("psu_id", "strat", "we
   des <- svydesign(ids = ~psu_id, strata = ~strat, weights = ~weight, data = tmp, nest = TRUE)
   des_target <- subset(des, age_grp %in% unname(age_codes) & !is.na(value))
 
-  row <- tibble(
+  grp_code <- age_codes[["adolescent"]]
+  grp_n <- sum(tmp$age_grp == grp_code & !is.na(tmp$value), na.rm = TRUE)
+  mn <- NA_real_
+  des_grp <- subset(des_target, age_grp == grp_code)
+  if (nrow(des_grp) > 0) {
+    est <- tryCatch(svymean(~value, des_grp, na.rm = TRUE), error = function(e) NULL)
+    if (!is.null(est)) mn <- as.numeric(coef(est)[1])
+  }
+  tibble(
     characteristic_group = var_labels[[var]] %||% var,
     characteristic = "Mean",
-    n_adolescent = "",
-    stat_adolescent = "",
-    n_young_adult = "",
-    stat_young_adult = ""
+    n_adolescent = as.character(grp_n),
+    stat_adolescent = format_mean(mn)
   )
-
-  for (grp in names(age_codes)) {
-    grp_code <- age_codes[[grp]]
-    grp_n <- sum(tmp$age_grp == grp_code & !is.na(tmp$value), na.rm = TRUE)
-    mn <- NA_real_
-    des_grp <- subset(des_target, age_grp == grp_code)
-    if (nrow(des_grp) > 0) {
-      est <- tryCatch(svymean(~value, des_grp, na.rm = TRUE), error = function(e) NULL)
-      if (!is.null(est)) mn <- as.numeric(coef(est)[1])
-    }
-    if (grp == "adolescent") {
-      row$n_adolescent <- as.character(grp_n)
-      row$stat_adolescent <- format_mean(mn)
-    } else {
-      row$n_young_adult <- as.character(grp_n)
-      row$stat_young_adult <- format_mean(mn)
-    }
-  }
-
-  row
 }
 
 # Placeholder row(s) when a variable has no data in this survey (so the final merged table still has the row).
@@ -269,9 +252,7 @@ placeholder_categorical <- function(var) {
     characteristic_group = var_labels[[var]] %||% var,
     characteristic = unname(lbls),
     n_adolescent = "",
-    stat_adolescent = "NA",
-    n_young_adult = "",
-    stat_young_adult = "NA"
+    stat_adolescent = "NA"
   )
 }
 
@@ -280,14 +261,12 @@ placeholder_continuous <- function(var) {
     characteristic_group = var_labels[[var]] %||% var,
     characteristic = "Mean",
     n_adolescent = "",
-    stat_adolescent = "NA",
-    n_young_adult = "",
-    stat_young_adult = "NA"
+    stat_adolescent = "NA"
   )
 }
 
 build_summary_table <- function(df) {
-  required <- c("Adolescent", "Young_Adult", "psu_id", "strat", "weight", "unmet_need")
+  required <- c("Adolescent", "psu_id", "strat", "weight", "unmet_need")
   missing_required <- setdiff(required, names(df))
   if (length(missing_required) > 0) {
     stop("Dataset is missing required fields: ", paste(missing_required, collapse = ", "))
@@ -296,15 +275,14 @@ build_summary_table <- function(df) {
   df_clean <- df %>%
     mutate(
       Adolescent = as.integer(Adolescent),
-      Young_Adult = as.integer(Young_Adult),
       psu_id = as.numeric(psu_id),
       strat = as.numeric(strat),
       weight = as.numeric(weight),
-      age_grp = if_else(Adolescent == 1L, 1L, if_else(Young_Adult == 1L, 2L, NA_integer_))
+      age_grp = if_else(Adolescent == 1L, 1L, NA_integer_)
     ) %>%
     filter(
       !is.na(unmet_need),
-      !is.na(age_grp),
+      Adolescent == 1L,
       !is.na(psu_id),
       !is.na(strat),
       !is.na(weight)
@@ -335,7 +313,7 @@ build_summary_table <- function(df) {
 }
 
 prepare_analysis_df <- function(df) {
-  required <- c("Adolescent", "Young_Adult", "psu_id", "strat", "weight", "unmet_need")
+  required <- c("Adolescent", "psu_id", "strat", "weight", "unmet_need")
   missing_required <- setdiff(required, names(df))
   if (length(missing_required) > 0) {
     stop("Dataset is missing required fields: ", paste(missing_required, collapse = ", "))
@@ -344,14 +322,13 @@ prepare_analysis_df <- function(df) {
   df %>%
     mutate(
       Adolescent = as.integer(Adolescent),
-      Young_Adult = as.integer(Young_Adult),
       psu_id = as.numeric(psu_id),
       strat = as.numeric(strat),
       weight = as.numeric(weight)
     ) %>%
     filter(
       !is.na(unmet_need),
-      (Adolescent == 1L | Young_Adult == 1L),
+      Adolescent == 1L,
       !is.na(psu_id),
       !is.na(strat),
       !is.na(weight)
@@ -364,7 +341,6 @@ build_country_table <- function(file_paths, stems) {
   stopifnot(length(file_paths) == length(stems))
   tables <- list()
   n_adol_vec <- integer(0)
-  n_ya_vec <- integer(0)
 
   for (i in seq_along(file_paths)) {
     dat <- readRDS(file_paths[i])
@@ -375,9 +351,8 @@ build_country_table <- function(file_paths, stems) {
       next
     }
     s <- length(tables) + 1L
-    n_adol_vec[s] <- sum(dat_analysis$Adolescent == 1L, na.rm = TRUE)
-    n_ya_vec[s] <- sum(dat_analysis$Young_Adult == 1L, na.rm = TRUE)
-    value_cols <- c("n_adolescent", "stat_adolescent", "n_young_adult", "stat_young_adult")
+    n_adol_vec[s] <- nrow(dat_analysis)
+    value_cols <- c("n_adolescent", "stat_adolescent")
     tbl_i <- tbl_i %>%
       rename_with(~ paste0(.x, "_", s), .cols = all_of(value_cols))
     tables[[s]] <- tbl_i
@@ -393,81 +368,80 @@ build_country_table <- function(file_paths, stems) {
       )
   }
 
-  # Reorder columns so AYA is top level: all Adolescent cols (each survey: n, %), then all Young Adults cols
   n_surveys <- length(tables)
   stub_cols <- c("characteristic_group", "characteristic")
   adol_cols <- as.vector(rbind(
     paste0("n_adolescent_", seq_len(n_surveys)),
     paste0("stat_adolescent_", seq_len(n_surveys))
   ))
-  ya_cols <- as.vector(rbind(
-    paste0("n_young_adult_", seq_len(n_surveys)),
-    paste0("stat_young_adult_", seq_len(n_surveys))
-  ))
-  merged <- merged %>% select(all_of(c(stub_cols, adol_cols, ya_cols)))
+  merged <- merged %>% select(all_of(c(stub_cols, adol_cols)))
 
   list(
     merged_tbl = merged,
     n_surveys = n_surveys,
-    n_adol = n_adol_vec,
-    n_ya = n_ya_vec
+    n_adol = n_adol_vec
   )
 }
 
 # Render one RTF per country: AYA (Adolescent / Young Adults) as top level, survey years nested under each.
-render_country_report <- function(country_result, year_labels, country_name, output_path) {
+render_country_report <- function(country_result, year_labels, country_name, output_path, country_code) {
   tbl_df <- country_result$merged_tbl
   n_surveys <- country_result$n_surveys
   n_adol <- country_result$n_adol
-  n_ya <- country_result$n_ya
 
-  report_title <- paste0("Table 1. Baseline Characteristics by Age Group (", country_name, ")")
-  report_subtitle <- "Unweighted counts and survey-weighted percentages/means; age group over survey year"
+  if (identical(country_code, "HNIR")) {
+    report_title <- "Table 1. Demographic and reproductive health characteristics of adolescents in Honduras, 2005–2019"
+  } else if (identical(country_code, "COIR")) {
+    report_title <- "Table 2. Demographic and reproductive health characteristics of adolescents in Colombia, 2005–2015"
+  } else {
+    report_title <- paste0("Table 1. Baseline characteristics — adolescents (", country_name, ")")
+  }
 
   tbl <- create_table(tbl_df, first_row_blank = TRUE) %>%
-    titles(report_title, report_subtitle) %>%
+    titles(report_title) %>%
     stub(c(characteristic_group, characteristic), label = "Characteristics") %>%
     define(characteristic_group, label_row = TRUE, blank_after = TRUE) %>%
     define(characteristic, indent = 0.2, align = "left")
 
-  # Columns are ordered: Adolescent (survey1 n, %, survey2 n, %, ...), then Young Adults (survey1 n, %, ...)
   for (s in seq_len(n_surveys)) {
     n_a <- paste0("n_adolescent_", s)
     sa <- paste0("stat_adolescent_", s)
-    n_y <- paste0("n_young_adult_", s)
-    sy <- paste0("stat_young_adult_", s)
+    year_lbl <- year_labels[s]
     tbl <- tbl %>%
       define(n_a, label = "Unweighted n", align = "center", standard_eval = TRUE) %>%
       define(sa, label = "Weighted %/Mean", align = "center", standard_eval = TRUE) %>%
-      define(n_y, label = "Unweighted n", align = "center", standard_eval = TRUE) %>%
-      define(sy, label = "Weighted %/Mean", align = "center", standard_eval = TRUE)
+      spanning_header(from = n_a, to = sa, label = paste0(year_lbl, " (N=", n_adol[s], ")"), level = 1, standard_eval = TRUE)
   }
 
-  # Reporter: level 1 = closest to columns, level 2 = above it. So AYA on top = level 2, survey year below = level 1.
-  n_a_1 <- paste0("n_adolescent_", 1)
-  sa_last <- paste0("stat_adolescent_", n_surveys)
-  n_y_1 <- paste0("n_young_adult_", 1)
-  sy_last <- paste0("stat_young_adult_", n_surveys)
-  tbl <- tbl %>%
-    spanning_header(from = n_a_1, to = sa_last, label = age_labels[["adolescent"]], level = 2, standard_eval = TRUE) %>%
-    spanning_header(from = n_y_1, to = sy_last, label = age_labels[["young_adult"]], level = 2, standard_eval = TRUE)
-
-  # Level 1 (row below AYA): one span per survey year under each AYA (e.g. 2010 (N=...), 2015 (N=...) for Colombia)
-  for (s in seq_len(n_surveys)) {
-    n_a <- paste0("n_adolescent_", s)
-    sa <- paste0("stat_adolescent_", s)
-    n_y <- paste0("n_young_adult_", s)
-    sy <- paste0("stat_young_adult_", s)
-    year_lbl <- year_labels[s]
+  if (identical(country_code, "COIR")) {
     tbl <- tbl %>%
-      spanning_header(from = n_a, to = sa, label = paste0(year_lbl, " (N=", n_adol[s], ")"), level = 1, standard_eval = TRUE) %>%
-      spanning_header(from = n_y, to = sy, label = paste0(year_lbl, " (N=", n_ya[s], ")"), level = 1, standard_eval = TRUE)
+      footnotes(
+        "Note: Data are unweighted counts (n) and survey-weighted percentages (%) or means. Percentage estimates account for the complex survey design, including primary sampling units, stratification, and sample weights.",
+        "Abbreviations: n: Unweighted sample size. N: Total unweighted sample size per survey year.",
+        "Technical notes: Wealth index: a three-level composite measure of a household's cumulative living standard. Parity: mean number of live births per adolescent."
+      )
+  } else if (identical(country_code, "HNIR")) {
+    tbl <- tbl %>%
+      footnotes(
+        "Note: Data are unweighted counts (n) and survey-weighted percentages (%) or means. Percentage estimates account for the complex survey design, including primary sampling units, stratification, and sample weights.",
+        "Abbreviations: n: Unweighted number of observations; N: Total unweighted sample size per survey period; NA: Not available; %/Mean: Survey-weighted percentage or mean value.",
+        "Technical notes: Wealth index: a three-level composite measure of a household's cumulative living standard. Parity: mean number of live births per adolescent."
+      )
+  } else {
+    tbl <- tbl %>%
+      footnotes(
+        "Note: Data are unweighted counts (n) and survey-weighted percentages (%) or means.",
+        "Abbreviations: n: Unweighted sample size. N: Total unweighted sample size per survey year."
+      )
   }
 
-  tbl <- tbl %>%
-    footnotes("Weighted estimates use survey::svydesign with dataset-specific psu_id/strat/weight.")
-
-  rpt <- create_report(output_path, output_type = "RTF", font = "Times", font_size = 10) %>%
+  rpt <- create_report(
+    output_path,
+    output_type = "RTF",
+    font = "Times",
+    font_size = 10,
+    orientation = "portrait"
+  ) %>%
     add_content(tbl)
 
   write_report(rpt)
@@ -500,7 +474,7 @@ main <- function() {
   }, character(1))
   valid <- !is.na(country_codes)
   if (!any(valid)) {
-    stop("No derived files matched survey_config (coir61fl, coir72fl, hnir62fl, hnir72fl).")
+    stop("No derived files matched survey_config (coir53fl, coir61fl, coir72fl, hnir52fl, hnir62fl, hnir72fl).")
   }
   input_files <- input_files[valid]
   stems <- stems[valid]
@@ -530,7 +504,7 @@ main <- function() {
     }
 
     out_path <- file.path("output", "reports", paste0(country_code, "_characteristics.rtf"))
-    render_country_report(country_result, year_labels, country_name, out_path)
+    render_country_report(country_result, year_labels, country_name, out_path, country_code)
     message("Saved: ", out_path)
   }
 }
