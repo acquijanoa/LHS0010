@@ -10,6 +10,10 @@ if (length(script_path) == 1) {
   setwd(project_root)
 }
 
+# DHS 2011-12: V024 has 18 departments. Honduras MICS 2019 splits Cortes (HH7=19 SPS)
+# and Francisco Morazan (HH7=20 Distrito Central); those are merged to parent departments
+# in derive_hnir72fl.R so hnir62fl and hnir72fl region / region_code are comparable.
+
 input_path <- "data/raw/HNIR62SD/hnir62fl.sas7bdat"
 output_path <- "data/derived/hnir62fl_derived.rds"
 
@@ -101,6 +105,8 @@ hnir62_derived <- data %>%
       if_else(V025 == 2, 0L, NA_integer_)
     ),
     region = unname(region_map[as.character(V024)]),
+    region_code = as.integer(V024),
+    w_quintile = if_else(V190 %in% 1:5, as.integer(V190), NA_integer_),
     windex_c3 = if_else(
       V190 %in% c(1, 2),
       1L,

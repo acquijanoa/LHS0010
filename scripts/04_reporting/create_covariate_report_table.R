@@ -52,12 +52,12 @@ age_codes <- c(adolescent = 1L, young_adult = 2L)
 age_labels <- c(adolescent = "Adolescent", young_adult = "Young Adults")
 
 # Survey file stem -> (country_code, country_name, year_label) for grouping and spanning headers
-# File stem is basename without _derived.rds (e.g. coir61fl, coir72fl, hnir62fl, hnir72sd)
+# File stem is basename without _derived.rds (e.g. coir61fl, coir72fl, hnir62fl, hnir72fl)
 survey_config <- list(
   coir61fl = list(country_code = "COIR", country_name = "Colombia", year_label = "2010"),
   coir72fl = list(country_code = "COIR", country_name = "Colombia", year_label = "2015"),
   hnir62fl = list(country_code = "HNIR", country_name = "Honduras", year_label = "2011-12"),
-  hnir72sd = list(country_code = "HNIR", country_name = "Honduras", year_label = "2019")
+  hnir72fl = list(country_code = "HNIR", country_name = "Honduras", year_label = "2019")
 )
 
 var_labels <- c(
@@ -491,7 +491,7 @@ main <- function() {
     stop("No derived datasets found. Provide RDS paths as args or place files in data/derived/.")
   }
 
-  # Stem = basename without _derived.rds (e.g. coir61fl, hnir72sd)
+  # Stem = basename without _derived.rds (e.g. coir61fl, hnir72fl)
   stems <- tolower(sub("_derived\\.rds$", "", basename(input_files), ignore.case = TRUE))
   # Group by country_code
   country_codes <- vapply(stems, function(s) {
@@ -500,7 +500,7 @@ main <- function() {
   }, character(1))
   valid <- !is.na(country_codes)
   if (!any(valid)) {
-    stop("No derived files matched survey_config (coir61fl, coir72fl, hnir62fl, hnir72sd).")
+    stop("No derived files matched survey_config (coir61fl, coir72fl, hnir62fl, hnir72fl).")
   }
   input_files <- input_files[valid]
   stems <- stems[valid]

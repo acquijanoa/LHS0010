@@ -132,6 +132,7 @@ coir61_derived <- data %>%
     ),
     region = unname(region_map[as.character(region_code)]),
     region_code = as.integer(region_code),
+    w_quintile = if_else(V190 %in% 1:5, as.integer(V190), NA_integer_),
     windex_c3 = if_else(
       V190 %in% c(1, 2),
       1L,

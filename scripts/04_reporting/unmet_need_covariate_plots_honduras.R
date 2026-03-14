@@ -3,7 +3,7 @@
 # Writes PNG figures and a Markdown report. Run from project root:
 #   Rscript scripts/04_reporting/unmet_need_covariate_plots_honduras.R
 # Optional: Rscript scripts/04_reporting/unmet_need_covariate_plots_honduras.R hnir62fl
-#           Rscript scripts/04_reporting/unmet_need_covariate_plots_honduras.R hnir72sd
+#           Rscript scripts/04_reporting/unmet_need_covariate_plots_honduras.R hnir72fl
 
 suppressPackageStartupMessages({
   library(dplyr)
@@ -30,13 +30,13 @@ if (length(script_path) == 1) {
 
 trail <- commandArgs(trailingOnly = TRUE)
 survey_key <- if (length(trail) >= 1) tolower(trail[[1]]) else "hnir62fl"
-if (!survey_key %in% c("hnir62fl", "hnir72sd", "both")) {
+if (!survey_key %in% c("hnir62fl", "hnir72fl", "both")) {
   survey_key <- "hnir62fl"
 }
 
 rds_map <- list(
   hnir62fl = list(path = "data/derived/hnir62fl_derived.rds", label = "Honduras DHS 2011–12"),
-  hnir72sd = list(path = "data/derived/hnir72sd_derived.rds", label = "Honduras MICS 2019")
+  hnir72fl = list(path = "data/derived/hnir72fl_derived.rds", label = "Honduras MICS 2019")
 )
 
 out_dir <- "output/reports/unmet_need_honduras"
@@ -197,7 +197,7 @@ append_md <- function(...) {
 # --- load ---
 if (survey_key == "both") {
   d62 <- prepare_one_survey(rds_map$hnir62fl$path, rds_map$hnir62fl$label)
-  d72 <- prepare_one_survey(rds_map$hnir72sd$path, rds_map$hnir72sd$label)
+  d72 <- prepare_one_survey(rds_map$hnir72fl$path, rds_map$hnir72fl$label)
   if (is.null(d62) && is.null(d72)) stop("No Honduras derived RDS found.")
   df_list <- compact(list(d62, d72))
   df <- bind_rows(df_list) %>%

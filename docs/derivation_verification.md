@@ -8,7 +8,7 @@ Verification of `derive_*.R` scripts against `*_metadata.json` (raw variable cat
 |----------|----------------------------|----------------------|--------|
 | COIR72FL | `docs/coir72fl_metadata.json` | `scripts/derive_coir72.R` | OK; derivations match metadata and DHS conventions |
 | HNIR62FL | `docs/hnir62fl_metadata.json` | `scripts/derive_hnir62.R` | OK; aligned with COIR72 (interview filter and required_vars added) |
-| HNIR72SD | `docs/hnir72sd_metadata.json` | `scripts/derive_hnir72.R` | OK; MICS-style variables match metadata |
+| HNIR72SD | `docs/hnir72fl_metadata.json` | `scripts/02_derive/derive_hnir72fl.R` | MICS women `hnir72fl.sav` |
 
 ---
 
@@ -43,7 +43,7 @@ Verification of `derive_*.R` scripts against `*_metadata.json` (raw variable cat
 
 ---
 
-## 3. HNIR72 (Honduras MICS-style) — `derive_hnir72.R` ↔ `hnir72sd_metadata.json`
+## 3. HNIR72FL (Honduras MICS 2019) — `derive_hnir72fl.R` ↔ `hnir72fl_metadata.json`
 
 - **Source vars**: All required variables (e.g. `wmweight`, `stratum`, `PSU`, `WM17`, `HH6`, `HH7`, `WB4`, `WB5`, `WB6A`, `WB6B`, `CP1`, `CP2`, `CP4*`, `UN2`, `UN4`, `UN7`, `UN8U`, `UN8N`, `UN12*`, `UN14*`, `SB2*`, `windex5`) are present in metadata.
 - **Interview**: WM17 1 = “COMPLETADA” → interviewed; filter to `interviewed == 1L`. Matches metadata.

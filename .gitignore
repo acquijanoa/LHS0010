@@ -1,14 +1,27 @@
-/data/*
-!/data/README.md
-!/data/raw/
-!/data/raw/.gitkeep
-# SAS transport files exceed GitHub 100 MB limit — keep local only
-data/raw/**/*.sas7bdat
-data/raw/**/*.SAS7BDAT
-!/data/derived/
-!/data/derived/.gitkeep
+# --- Raw data (DHS/MICS/survey files) — never commit ---
+data/raw/**
+!data/raw/.gitkeep
+!data/raw/**/README.md
+
+# --- Local geodata (often large) — never commit ---
+data/shp/**
+!data/shp/.gitkeep
+!data/shp/**/README.md
+
+# SAS transport > GitHub limit (also under raw/, but keep rule if copied elsewhere)
+**/*.sas7bdat
+**/*.SAS7BDAT
+
+# Repo root data README stays tracked (do not ignore)
+!data/README.md
+
+# Derived: optional ignore for large RDS (comment out if you want derived in git)
+# data/derived/**/*.rds
+
 /submissions
 .DS_Store
+# Cursor IDE (keep rules if added; ignore debug logs)
+.cursor/*.log
 
 # Output temp files (e.g. editor locks)
 output/~$*

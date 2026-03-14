@@ -119,6 +119,7 @@ coir72_derived <- data %>%
     ),
     region = unname(region_map[as.character(SDEPTO)]),
     region_code = SDEPTO,
+    w_quintile = if_else(V190 %in% 1:5, as.integer(V190), NA_integer_),
     windex_c3 = if_else(
       V190 %in% c(1, 2),
       1L,
