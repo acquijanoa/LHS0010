@@ -2,6 +2,8 @@
 
 Run all steps from **project root** (see main README).
 
+**Longleaf (UNC):** SLURM batch scripts use `module add r/4.4.0` and `Rscript` per [Longleaf SLURM examples](https://help.rc.unc.edu/longleaf-slurm-examples/): `scripts/03_analysis/run_honduras_bym2_st_longleaf.sbatch` (spatio-temporal Stan), `run_honduras_bym2_longleaf.sbatch` (per-wave Stan). Submit with `mkdir -p logs && sbatch scripts/03_analysis/run_honduras_bym2_st_longleaf.sbatch`.
+
 **Paths:** All scripts use project-relative paths (`data/`, `output/`, `docs/`). When you run a script with `Rscript scripts/.../file.R` from the repo root, the script sets the working directory to the project root automatically, so there are no path conflicts. If you run a script interactively (e.g. Source in RStudio), set the working directory to the project root first (e.g. **Session → Set Working Directory → To Project Directory**), or paths like `data/derived` will be resolved relative to the current directory and may fail.
 
 - **01_metadata** – Metadata JSON (`generate_variable_metadata.R` for HNIR* including **`hnir72fl.sav`**; **`generate_bh_metadata.R`** → `docs/bh_metadata.json`).
