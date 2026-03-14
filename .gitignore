@@ -3,10 +3,17 @@ data/raw/**
 !data/raw/.gitkeep
 !data/raw/**/README.md
 
-# --- Local geodata (often large) — never commit ---
+# --- Local geodata: shapefiles in data/shp/ are tracked (Honduras maps) ---
+# Ignore everything in shp except README, gitkeep, and known shapefile sidecars
 data/shp/**
 !data/shp/.gitkeep
 !data/shp/**/README.md
+!data/shp/**/*.shp
+!data/shp/**/*.shx
+!data/shp/**/*.dbf
+!data/shp/**/*.prj
+!data/shp/**/*.cpg
+!data/shp/**/*.qmd
 
 # SAS transport > GitHub limit (also under raw/, but keep rule if copied elsewhere)
 **/*.sas7bdat

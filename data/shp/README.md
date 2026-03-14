@@ -1,6 +1,8 @@
 # Honduras shapefiles
 
-Place **`Shp_mgd.shp`** (+ sidecar `.dbf`, `.shx`, `.prj`, …) here. The spatial smoothing script (`scripts/03_analysis/honduras_spatial_smooth_stan.R`) expects:
+**`Shp_mgd.*`** (+ sidecars) is **in the repo** under this folder. **`HondurasMICS2019GPS.*`** is also included (MICS 2019 GPS layer).
+
+Place or replace **`Shp_mgd.shp`** (+ sidecar `.dbf`, `.shx`, `.prj`, …) here if you re-download. The spatial smoothing script (`scripts/03_analysis/honduras_spatial_smooth_stan.R`) expects:
 
 - Attribute **`CNTRYNAMEE`** including `"Honduras"`
 - Attribute **`DHSREGEN`** region names (aligned with DHS/MICS departments; see `smooth_OR.R` for name fixes)
